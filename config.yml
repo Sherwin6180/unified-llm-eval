@@ -1,0 +1,35 @@
+# Master configuration for a specific evaluation run.
+run_settings:
+  task_name: "Full Evaluation of Merged and Instruct Models"
+  description: "This run evaluates the base instruct model against a merged model on all programming and math tasks."
+  # List of tasks to execute. Use ["all"] to run everything in the task_registry.
+  tasks_to_run:
+    # - "all" 
+    # - "rust"
+    - "go"
+    # - "humaneval"
+    # - "gsm8k-cot"
+    # - "gsm8k-pal"
+
+# List of models to be evaluated in this run.
+models:
+  - model_name: "deepseek-coder-instruct"
+    path: "/scratch/shared_dir/xinyu/mediator_models/deepseek-coder-7b-instruct-v1.5"
+    type: "instruct"
+    description: "Base instructed model"
+
+# General settings applicable to all evaluations.
+evaluation_settings:
+  gpu_ids: "2,3,5,6"
+  timeout_minutes: 30
+  batch_size: 32
+  temperature: 0.0
+  runs_per_eval: 1
+  output_dir: "./evaluation_results"
+
+# Configuration for environments and paths to evaluation scripts.
+environment_config:
+  harness_env: "harness_env" # DON'T CHANGE
+  languages_env: "languages_env" # DON'T CHANGE
+  math_harness_dir: "./vendor/math-evaluation-harness" # DON'T CHANGE
+  language_eval_dir: "./vendor/HumanEval" # DON'T CHANGE

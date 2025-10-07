@@ -1,0 +1,23 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+
+# Virtual environment folders
+.env
+.venv
+env/
+venv/
+
+# Output and result files
+evaluation_results/
+*.csv
+*.log
+temporary_merged_models/
+
+# IDE and OS specific files
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,37 @@
+# environment-harness.yml
+name: harness_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pyyaml
+  - pip:
+      # --- Key Harness Frameworks ---
+      - torch==2.8.0
+      - transformers==4.56.2
+      - vllm==0.10.2
+      - accelerate>=0.26.0
+      - peft==0.17.1
+      - datasets==3.6.0
+      - lm-eval==0.4.9.1
+
+      # --- Other Dependencies for Harnesses ---
+      - latex2sympy2
+      - sympy
+      - pebble
+      - timeout-decorator
+      - word2number
+      - pandas
+      - numpy
+      - scipy
+      - scikit-learn
+      - fire
+      - tqdm
+      - tokenizers
+      - safetensors
+      - triton
+      - xformers
+      - sentencepiece
+      - tiktoken
