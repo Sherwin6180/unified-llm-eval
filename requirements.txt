@@ -1,0 +1,15 @@
+# Main dependencies for unified_evaluator.py
+# These are the packages needed to run the main orchestrator script
+
+# Core dependencies
+pyyaml>=6.0
+pandas>=2.0.0
+tqdm>=4.65.0
+
+# Note: The actual evaluation tasks require additional dependencies
+# that are managed by the conda environments (harness_env and languages_env).
+# 
+# If you want to run the evaluator without conda, you would need to install
+# ALL dependencies from both config/harness_env.yml and config/languages_env.yml
+
+# Instructions on how to set up the conda environment is added to README.md

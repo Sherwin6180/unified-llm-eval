@@ -54,6 +54,9 @@ class EnvironmentManager:
                 if output:
                     print(output.strip())
             
+            # DONE: FIX - Prevent Race Condition
+            process.wait()
+            
             if process.returncode != 0:
                  raise subprocess.CalledProcessError(process.returncode, process.args)
 
