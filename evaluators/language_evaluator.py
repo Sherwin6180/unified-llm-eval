@@ -23,13 +23,18 @@ class LanguageEvaluator(BaseEvaluator):
         
         eval_script_path = os.path.abspath(os.path.join(eval_dir, "eval_pal.py"))
         dataroot_path = os.path.abspath(os.path.join(eval_dir, "data/"))
+        log_dir_path = os.path.abspath(os.path.join(eval_dir, "logs/"))
+        
+        # Create logs directory if it doesn't exist
+        os.makedirs(log_dir_path, exist_ok=True)
 
         if num_gpus <= 1:
             print("\n[INFO] Single GPU detected. Running with simple 'python' command.\n")
             command = [
                 "python",
                 eval_script_path,
-                "--logdir", model_path,
+                "--model_path", model_path,
+                "--log_dir", log_dir_path,
                 "--language", task_name,
                 "--dataroot", dataroot_path
             ]
@@ -41,7 +46,8 @@ class LanguageEvaluator(BaseEvaluator):
                 "--nproc_per_node", str(num_gpus),
                 "--master_port", str(master_port),
                 eval_script_path,
-                "--logdir", model_path,
+                "--model_path", model_path,
+                "--log_dir", log_dir_path,
                 "--language", task_name,
                 "--dataroot", dataroot_path
             ]
