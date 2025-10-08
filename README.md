@@ -102,7 +102,7 @@ The core of the pipeline is the main entry point `unified_evaluator.py`, which o
       1. Consider configuring compilers using Docker Containers or Podman
       2. Refer to MultiPL-E's repo: [MultiPL-E](https://github.com/nuprl/MultiPL-E)
 
-6.  **Configure `config.yml`:** Before running, open `config/config.yml` and customize it for your evaluation run. See the detailed `Configuration` section below.
+6.  **Configure `config.yml`:** Before running, open `config.yml` and customize it for your evaluation run. See the detailed `Configuration` section below.
 
 ## Configuration (`config.yml`)
 
