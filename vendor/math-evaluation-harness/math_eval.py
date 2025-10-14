@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument("--save_outputs", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--use_safetensors", action="store_true")
+    parser.add_argument("--batch_size", default=32, type=int)
     args = parser.parse_args()
     args.top_p = 1 if args.temperature == 0 else args.top_p # top_p must be 1 when using greedy sampling (vllm)
     return args
@@ -197,8 +198,11 @@ def main(llm, tokenizer, data_name, args):
                 tokenizer=tokenizer,
                 prompts=prompts,
                 max_new_tokens=args.max_tokens_per_call,
-                batch_size=16,
+                batch_size=args.batch_size,
                 stop_id_sequences=stop_words,
+                temperature=args.temperature,
+                top_p=args.top_p,
+                do_sample=False if args.temperature == 0 else True
             )
 
         assert len(outputs) == len(current_prompts)

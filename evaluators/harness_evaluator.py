@@ -1,6 +1,7 @@
 # evaluators/harness_evaluator.py
 from .base_evaluator import BaseEvaluator
 import os
+import json
 
 class HarnessEvaluator(BaseEvaluator):
     """Evaluator for HumanEval (lm-eval) and GSM8K (math-harness)."""
@@ -14,13 +15,27 @@ class HarnessEvaluator(BaseEvaluator):
         if task_name == "humaneval":
             os.environ["HF_ALLOW_CODE_EVAL"] = "1"
             
+            batch_size = self.eval_settings.get("batch_size", "auto")
+            
+            temperature = self.eval_settings.get("temperature", 0.0)
+            
+            model_args = f"pretrained={model_path},tensor_parallel_size={tp_size},dtype=bfloat16"
+            
+            # Create generation arguments for temperature and sampling
+            gen_kwargs = {
+                "temperature": temperature,
+                "do_sample": False if temperature == 0.0 else True
+            }
+            gen_kwargs_str = json.dumps(gen_kwargs)
+            
             command = [
                 "python", "-m", "lm_eval",
                 "--model", "vllm",
                 "--tasks", "humaneval",
-                "--model_args", f"pretrained={model_path},tensor_parallel_size={tp_size},dtype=bfloat16",
+                "--model_args", model_args,
+                "--gen_kwargs", gen_kwargs_str,
                 "--device", "cuda",
-                "--batch_size", "auto",
+                "--batch_size", str(batch_size),
                 "--output_path", "./evaluation_results/humaneval_output.json",
                 "--confirm_run_unsafe_code"
             ]
@@ -29,6 +44,9 @@ class HarnessEvaluator(BaseEvaluator):
         elif task_name in ["gsm8k-cot", "gsm8k-pal"]:
             math_dir = self.env_config['math_harness_dir']
             prompt_type = "cot" if task_name == "gsm8k-cot" else "pal"
+            
+            temperature = self.eval_settings.get("temperature", 0.0)
+            batch_size = self.eval_settings.get("batch_size", 32)
             
             math_script_path = os.path.abspath(os.path.join(math_dir, "math_eval.py"))
             if not os.path.exists(math_script_path):
@@ -39,9 +57,12 @@ class HarnessEvaluator(BaseEvaluator):
                 "--model_name_or_path", model_path,
                 "--data_names", "gsm8k",
                 "--prompt_type", prompt_type,
-                "--use_vllm",
-                "--temperature", "0.0",
-                "--save_outputs"
+                # "--use_vllm",
+                "--temperature", str(temperature),
+                "--save_outputs",
+                "--overwrite",
+                "--batch_size", str(batch_size),
+                "--use_safetensors"
             ]
             return command, math_dir, env_name
         
