@@ -57,7 +57,7 @@ class HarnessEvaluator(BaseEvaluator):
                 "--model_name_or_path", model_path,
                 "--data_names", "gsm8k",
                 "--prompt_type", prompt_type,
-                # "--use_vllm",
+                "--use_vllm",
                 "--temperature", str(temperature),
                 "--save_outputs",
                 "--overwrite",
