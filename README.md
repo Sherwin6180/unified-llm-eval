@@ -167,6 +167,8 @@ Parameters that control the evaluation process.
   * `timeout_minutes`: The maximum time in minutes to allow for a single task before it times out. Default is 30.
   * `runs_per_eval`: How many times to repeat each evaluation task for a given model. The final CSV will include a `run_id` column.
   * `output_dir`: The directory where result CSVs and logs will be saved.
+  * `temperature`: Ranging from 0 to 1.0
+  * `batch size`: To set batch size for gsm8k, you first need to comment out `--use_vllm` in ./evaluators/harness_evaluator.py. Otherwise, vllm will set the batch size automatically. Also, you need to make sure you are only using 1 GPU if you want to try different batch sizes for gsm8k evaluations.
 
 ### `environment_config`
 

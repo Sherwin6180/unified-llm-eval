@@ -17,34 +17,43 @@ import datetime
 
 if __name__ == '__main__':
     kwargs_handlers = [DistributedDataParallelKwargs(find_unused_parameters=True)]
-    accelerator = Accelerator(mixed_precision="bf16", kwargs_handlers=kwargs_handlers)   
+    accelerator = Accelerator(mixed_precision="bf16", kwargs_handlers=kwargs_handlers)
 
 
     parser = ArgumentParser()
-    parser.add_argument("--model_path", type=str, required=True, help="Path to the model directory")
-    parser.add_argument("--log_dir", type=str, default="tmp/", help="Directory for logging evaluation outputs")
-    parser.add_argument("--language", type=str, default="", help="Programming language for evaluation")
-    parser.add_argument("--dataroot", type=str, default="", help="Root directory for evaluation data")
+    parser.add_argument("--logdir", type=str, default="")
+    parser.add_argument("--language", type=str, default="")
+    parser.add_argument("--dataroot", type=str, default="")
+    parser.add_argument("--temperature", type=float, default=0.0, help="Temperature for generation.")
+    parser.add_argument("--batch_size", type=int, default=1, help="Number of problems to process in a batch.")
     
     args = parser.parse_args()
 
-    model_path = args.model_path
-    log_dir = args.log_dir
+    logdir = args.logdir
     language = args.language
 
     start_time = datetime.datetime.now()
 
-    # Create log directory if it doesn't exist
-    os.makedirs(log_dir, exist_ok=True)
-    
+    if logdir == "":
+        logdir = "tmp/"
     tokenizer = dict(
         cls=AutoTokenizer,
-        model_path=model_path,)
+        model_path=logdir,)
 
     dataroot = args.dataroot
 
-    evaluator = evaltor(data_root=dataroot, max_seq_len=4096, tokenizer_cfg=tokenizer, log_dir=log_dir, n_sample=1, batch_size=32, language=language, max_gen_len=500)
+    evaluator = evaltor(
+        data_root=dataroot,
+        max_seq_len=4096,
+        tokenizer_cfg=tokenizer,
+        log_dir=logdir,
+        n_sample=1,
+        batch_size=args.batch_size,
+        language=language,
+        max_gen_len=500,
+        temperature=args.temperature
+    )
 
-    model = AutoModelForCausalLM.from_pretrained(model_path, device_map=accelerator.device, trust_remote_code=True, torch_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(logdir, device_map=accelerator.device, trust_remote_code=True, torch_dtype=torch.bfloat16)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    evaluator.eval_model(model, accelerator, model_path=model_path, language=language, start_time=start_time)
+    evaluator.eval_model(model, accelerator, model_path=logdir, language=language, start_time=start_time)
