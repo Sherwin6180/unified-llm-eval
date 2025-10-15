@@ -35,6 +35,8 @@ The core of the pipeline is the main entry point `unified_evaluator.py`, which o
 │   ├── env_manager.py            # Manages Conda environments (creation and execution)
 │   ├── logger.py                 # Handles console logging and the scoreboard
 │   └── result_parser.py          # Parses scores from script outputs
+├── scripts/                      # Helper scripts
+│   └── populate_models_from_dir.py # Populate models list in config.yml
 ├── vendor/
 │   ├── HumanEval/                # Vendored code for language evaluation
 │   └── math-evaluation-harness/  # Vendored code for math evaluation
@@ -176,6 +178,24 @@ Defines the names of the Conda environments and paths to the evaluation scripts.
 
   * `harness_env`, `languages_env`: The names of the two Conda environments.
   * `math_harness_dir`, `language_eval_dir`: The paths of two vendors.
+
+## Utility: Populate models list from a directory
+
+Use the helper script to auto-generate the `models` section in `config.yml` from all immediate subdirectories under a root directory (non-recursive). The rest of the YAML remains unchanged.
+
+```bash
+python scripts/populate_models_from_dir.py \
+  --root "/scratch/shared_dir/oduran6/" \
+  --config "config.yml" \
+  --model-name-prefix "deepseek-coder-instruct" \
+  --type "instruct" \
+  --description "Auto-populated model"
+```
+
+Notes:
+- Only immediate subdirectories are considered as model paths.
+- The `models` list is replaced; other sections are preserved.
+- `model_name` is constructed as `<prefix>-<leaf-dir>` (customize with `--model-name-prefix`).
 
 ## Usage
 
