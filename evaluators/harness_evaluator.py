@@ -11,6 +11,7 @@ class HarnessEvaluator(BaseEvaluator):
         tp_size = len(gpu_ids.split(','))
 
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_ids
+        os.environ["VLLM_USE_V1"] = "0"
         
         if task_name == "humaneval":
             os.environ["HF_ALLOW_CODE_EVAL"] = "1"
@@ -34,6 +35,7 @@ class HarnessEvaluator(BaseEvaluator):
                 "--tasks", "humaneval",
                 "--model_args", model_args,
                 "--gen_kwargs", gen_kwargs_str,
+                # Consider removing this device flag
                 "--device", "cuda",
                 "--batch_size", str(batch_size),
                 "--output_path", "./evaluation_results/humaneval_output.json",
