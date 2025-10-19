@@ -74,6 +74,12 @@ class UnifiedEvaluator:
         run_name = self.run_settings.get('task_name', 'evaluation').replace(' ', '_')
         csv_path = output_dir / f"{run_name}_{timestamp}.csv"
 
+        csv_columns = [
+            "timestamp", "model_name", "task", "run_id", "environment",
+            "score", "status", "duration", "error_log"
+        ]
+        pd.DataFrame(columns=csv_columns).to_csv(csv_path, index=False)
+
         # 3. Get runs_per_eval and calculate total tasks for the progress bar
         runs_per_eval = self.eval_settings.get("runs_per_eval", 1)
         total_tasks_count = len(self.models_to_evaluate) * len(self.tasks_to_run) * runs_per_eval
@@ -109,7 +115,9 @@ class UnifiedEvaluator:
                         
                         # Store and log results in real-time
                         self.results.append(result)
-                        pd.DataFrame(self.results).to_csv(csv_path, index=False)
+                        result_df = pd.DataFrame([result], columns=csv_columns)
+                        
+                        result_df.to_csv(csv_path, mode='a', header=False, index=False)
                         
                         # Update the live scoreboard for terminal display
                         score_display = result['score'] if result['status'] == 'SUCCESS' else result['status']

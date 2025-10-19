@@ -24,9 +24,14 @@ class LanguageEvaluator(BaseEvaluator):
         eval_script_path = os.path.abspath(os.path.join(eval_dir, "eval_pal.py"))
         dataroot_path = os.path.abspath(os.path.join(eval_dir, "data/"))
 
+        model_folder_name = os.path.basename(model_path.rstrip('/'))
+        log_dir_output = os.path.abspath(os.path.join("./evaluation_results/language_logs", model_folder_name, task_name))
+        os.makedirs(log_dir_output, exist_ok=True)
+
         base_command_args = [
             eval_script_path,
-            "--logdir", model_path,
+            "--model_name_or_path", model_path,
+            "--logdir", log_dir_output,             
             "--language", task_name,
             "--dataroot", dataroot_path,
             "--temperature", str(temperature),
