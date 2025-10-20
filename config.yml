@@ -13,16 +13,22 @@ run_settings:
 
 # List of models to be evaluated in this run.
 models:
-  - model_name: "deepseek-coder-instruct"
-    path: "/scratch/shared_dir/xinyu/mediator_models/deepseek-coder-7b-instruct-v1.5"
+  - model_name: "deepseek-llm-7b-base-online"
+    path: "deepseek-ai/deepseek-llm-7b-base"
+    type: "base"
+    description: "Base instructed model"
+    location: "hf"
+  - model_name: "deepseek-coder-6.7b-instruct-local"
+    path: "/scratch/shared_dir/xinyu/deepseek-coder-6.7b-instruct"
     type: "instruct"
     description: "Base instructed model"
+    location: "local"
 
 # General settings applicable to all evaluations.
 evaluation_settings:
   gpu_ids: "2,3,5,6"
   timeout_minutes: 30
-  batch_size: 32
+  batch_size: 1
   temperature: 0.0
   runs_per_eval: 1
   output_dir: "./evaluation_results"

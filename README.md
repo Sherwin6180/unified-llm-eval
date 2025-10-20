@@ -124,6 +124,7 @@ models:
     path: "/path/to/your/model"
     type: "instruct"
     description: "Base instructed model"
+    location: "local"
 
 # 3. General evaluation parameters
 evaluation_settings:
@@ -160,6 +161,7 @@ A list of model objects to be evaluated.
   * `path`: The absolute path to the model's directory on your filesystem.
   * `type`: A category for the model (e.g., "instruct", "base"). Used for logging.
   * `description`: Optional descriptive text.
+  * `location`: Local model ("local") or huggingface online model ("hf"). If location is not specified, default to "local".
 
 ### `evaluation_settings`
 
