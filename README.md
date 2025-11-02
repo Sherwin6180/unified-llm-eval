@@ -200,3 +200,41 @@ Adding a new task is straightforward:
 1.  Add the new task name to `tasks/task_registry.py`, mapping it to an environment and an `Evaluator` class.
 2.  If the task requires new execution logic, create a new class in `evaluators/` that inherits from `BaseEvaluator`.
 3.  If a new environment is needed, add its `.yml` file to `config/` and update the logic in `utils/env_manager.py`.
+
+## Run heuristic and greedy algorithms
+
+This framework includes scripts for running heuristic and greedy model merging, located in the `algorithms/` directory.
+
+### 1. Configuration
+
+**Note: ** Before you run the scripts, make sure your current environment has mergekit installed.
+
+All settings for the algorithms are controlled by a single file: `algorithms/sandhi_config.yml`.
+
+Before running, please configure the following keys in that file:
+
+  * **`tasks`**: The abstract tasks to merge (e.g., `"coder"`, `"math"`).
+  * **`models_to_merge`**: File paths to the base models you want to merge.
+  * **`total_layers`**: The total number of layers in the models.
+  * **`greedy_settings` / `heuristic_settings`**: Algorithm-specific settings like `layer_budget` and paths to your profiling data (e.g., `profiling_dir`).
+  * **`tmp_dir`**: A path for temporary files, which will be created automatically.
+
+### 2. How to Run
+
+Execute the scripts from the **root** directory of the `unified-llm-eval` project using the `python -m` command:
+
+**To run the Greedy algorithm:**
+
+```bash
+python -m algorithms.greedy
+```
+
+**To run the Heuristic algorithm:**
+
+```bash
+python -m algorithms.heuristic
+```
+
+### 3. Outputs
+
+All generated files, including temporary configs, logs, profiling scores, and the final merged models, will be saved in the `algorithms/outputs/` directory.

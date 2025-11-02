@@ -19,6 +19,7 @@ temporary_merged_models/
 vendor/HumanEval/human_eval/rust/src/bin/
 vendor/HumanEval/human_eval/rust/tmp/logs/
 vendor/math-evaluation-harness/output/
+algorithms/outputs/
 
 # IDE and OS specific files
 .idea/
