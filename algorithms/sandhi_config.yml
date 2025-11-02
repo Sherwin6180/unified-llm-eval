@@ -6,7 +6,7 @@ algorithm_settings:
   tasks: ["coder", "math"]
   # tasks: ["go", "rust"]
   run_prefix: "sandhi_merge"
-  tmp_dir: "/scratch/shared_dir/xinyu/tmp"
+  tmp_dir: "/scratch/shared_dir/xinyu/tmp" # remember to change to your own tmp path
 
   # Two models to merge
   models_to_merge:
