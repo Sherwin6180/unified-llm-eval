@@ -6,7 +6,7 @@ algorithm_settings:
   tasks: ["coder", "math"]
   # tasks: ["go", "rust"]
   run_prefix: "sandhi_merge"
-  tmp_dir: "/scratch/shared_dir/xinyu/tmp"
+  tmp_dir: "/scratch/shared_dir/xinyu/tmp" # remember to change to your own tmp path
 
   # Two models to merge
   models_to_merge:
@@ -25,7 +25,7 @@ algorithm_settings:
   # --- 'heuristic.py' settings ---
   heuristic_settings:
     layer_budget: 20
-    profiling_dir: "./algorithms/profiling_data" # # Only change it if you have new profiling data
+    profiling_dir: "./algorithms/profiling_data" # Only change it if you have new profiling data
 
 # ===================================================================
 # Evaluation Framework Configuration
