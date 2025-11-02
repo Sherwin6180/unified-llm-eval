@@ -84,8 +84,10 @@ def process_window_data(profiling_dir: str, tasks: List[str], baseline_accuracie
     }
 
     task1, task2 = tasks
-    metric1, metric2 = TASK_TO_METRIC[task1], TASK_TO_METRIC[task2]
-    basetype1, basetype2 = TASK_TO_BASETYPE[task1], TASK_TO_BASETYPE[task2]
+    metric1 = TASK_TO_METRIC.get(task1, task1)
+    metric2 = TASK_TO_METRIC.get(task2, task2)
+    basetype1 = TASK_TO_BASETYPE.get(task1, task1)
+    basetype2 = TASK_TO_BASETYPE.get(task2, task2)
     
     csv_path = os.path.join(profiling_dir, 'window_merge.csv')
     df = pd.read_csv(csv_path)

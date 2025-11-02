@@ -26,8 +26,10 @@ def process_individual_layer_data(profiling_file: str, tasks: List[str], baselin
     }
 
     task1, task2 = tasks
-    metric1, metric2 = TASK_TO_METRIC[task1], TASK_TO_METRIC[task2]
-    basetype1, basetype2 = TASK_TO_BASEMODEL[task1], TASK_TO_BASEMODEL[task2]
+    metric1 = TASK_TO_METRIC.get(task1, task1)
+    metric2 = TASK_TO_METRIC.get(task2, task2)
+    basetype1 = TASK_TO_BASEMODEL.get(task1, task1)
+    basetype2 = TASK_TO_BASEMODEL.get(task2, task2)
 
     print(f"Loading and processing individual layer data from: {profiling_file}")
 
