@@ -217,7 +217,7 @@ Before running, please configure the following keys in that file:
   * **`models_to_merge`**: File paths to the base models you want to merge.
   * **`total_layers`**: The total number of layers in the models.
   * **`greedy_settings` / `heuristic_settings`**: Algorithm-specific settings like `layer_budget` and paths to your profiling data (e.g., `profiling_dir`).
-  * **`tmp_dir`**: A path for temporary files, which will be created automatically.
+  * **`tmp_dir`**: A path for temporary files, **remember to change to your own path**
 
 ### 2. How to Run
 
