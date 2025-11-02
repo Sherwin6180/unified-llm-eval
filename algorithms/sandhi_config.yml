@@ -1,0 +1,48 @@
+# ===================================================================
+# Sandhi (Merge) Algorithm Configuration
+# ===================================================================
+
+algorithm_settings:
+  tasks: ["coder", "math"]
+  # tasks: ["go", "rust"]
+  run_prefix: "sandhi_merge"
+  tmp_dir: "/scratch/shared_dir/xinyu/tmp" # remember to change to your own tmp path
+
+  # Two models to merge
+  models_to_merge:
+    coder: "/scratch/shared_dir/xinyu/mediator_models/deepseek-coder-7b-instruct-v1.5"
+    math: "/scratch/shared_dir/xinyu/mediator_models/deepseek-math-7b-instruct"
+  
+  # Model layers
+  total_layers: 30
+
+  # --- 'greedy.py' settings ---
+  greedy_settings:
+    layer_budget: 10
+    weights: [0.5, 0.5]
+    profiling_file_path: "./algorithms/profiling_data/individual_layer_merge.csv" # Only change it if you have new profiling data
+
+  # --- 'heuristic.py' settings ---
+  heuristic_settings:
+    layer_budget: 20
+    profiling_dir: "./algorithms/profiling_data" # Only change it if you have new profiling data
+
+# ===================================================================
+# Evaluation Framework Configuration
+# ===================================================================
+
+evaluation_settings:
+  gpu_ids: "5,6"
+  timeout_minutes: 45
+  
+  batch_size: 32
+  temperature: 0.0
+  # runs_per_eval: 1
+  output_dir: "./evaluation_results"
+
+environment_config:
+  harness_env: "harness_env"
+  math_harness_dir: "./vendor/math-evaluation-harness"
+  
+  languages_env: "languages_env" 
+  language_eval_dir: "./vendor/HumanEval"
