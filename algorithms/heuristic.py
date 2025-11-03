@@ -12,7 +12,45 @@ from pathlib import Path
 from utils.env_manager import EnvironmentManager
 from tasks.task_registry import TASK_REGISTRY
 
-CONFIG_FILE_PATH = "algorithms/sandhi_config.yml"
+CONFIG_FILE_PATH = os.environ.get("SANDHI_CONFIG_PATH", "algorithms/sandhi_config.yml")
+
+
+# ------------------------------------------------------------
+# Component mapping and merge schemes for selective merging
+# The indices align with algorithms/merge_pipeline.py COMPONENT_MAPPING
+# 0-3: attention, 4-6: MLP, 7-8: norms, 9-11: non-layer components
+COMPONENT_INDEX_TO_NAME = {
+    0: "self_attn.q_proj",
+    1: "self_attn.k_proj",
+    2: "self_attn.v_proj",
+    3: "self_attn.o_proj",
+    4: "mlp.gate_proj",
+    5: "mlp.up_proj",
+    6: "mlp.down_proj",
+    7: "input_layernorm",
+    8: "post_attention_layernorm",
+    9: "embed_tokens",
+    10: "lm_head",
+    11: "final_norm",
+}
+
+NON_LAYER_COMPONENT_NAMES = {"embed_tokens", "lm_head", "final_norm"}
+
+SCHEME_TO_COMPONENT_IDS = {
+    # Only attention projections
+    "attn_only": [0, 1, 2, 3],
+    # Attention + MLP
+    "attn_plus_mlp": [0, 1, 2, 3, 4, 5, 6],
+    "attnplus_mlp": [0, 1, 2, 3, 4, 5, 6],  # alias
+    # Best setting per user spec
+    "best_setting": [0, 1, 2, 3, 4, 5, 6, 8, 10],
+    # Full means merge all components on merged layers
+    "full": None,
+}
+
+def _normalize_scheme_name(name: str) -> str:
+    s = (name or "full").strip().lower().replace("+", "_").replace("-", "_")
+    return s
 
 
 def evaluate_model(
@@ -119,9 +157,11 @@ def process_window_data(profiling_dir: str, tasks: List[str], baseline_accuracie
     return results
 
 
-def create_yaml_for_merge(layers_to_merge: list, base_language: str, models_subset: Dict[str, str], output_dir: str, total_layers: int) -> str: 
+def create_yaml_for_merge(layers_to_merge: list, base_language: str, models_subset: Dict[str, str], output_dir: str, total_layers: int, merge_scheme: str = "full") -> str: 
     """
     Generates a mergekit YAML configuration for a given set of layers.
+    If merge_scheme != 'full', only selected components are merged on the chosen layers;
+    all other components fall back to the base (model A).
     """
     os.makedirs(output_dir, exist_ok=True)
     lang_names = list(models_subset.keys())
@@ -134,47 +174,105 @@ def create_yaml_for_merge(layers_to_merge: list, base_language: str, models_subs
     else:
         base_model_path, unmerged_t = model_1_path, 1.0
 
-    slices = []
-    current_pos = 0
-    for layer_idx in sorted(layers_to_merge):
-        # Add a slice for unmerged layers before the current merge window.
-        if current_pos < layer_idx:
+    scheme_key = _normalize_scheme_name(merge_scheme)
+
+    # Full scheme: keep existing behavior (average entire merged layers)
+    if scheme_key == "full" or SCHEME_TO_COMPONENT_IDS.get(scheme_key) is None:
+        slices = []
+        current_pos = 0
+        for layer_idx in sorted(layers_to_merge):
+            if current_pos < layer_idx:
+                slices.append({
+                    'sources': [
+                        {'model': model_0_path, 'layer_range': [int(current_pos), int(layer_idx)]},
+                        {'model': model_1_path, 'layer_range': [int(current_pos), int(layer_idx)]}
+                    ],
+                    'parameters': {'t': [{'value': unmerged_t}]}
+                })
             slices.append({
                 'sources': [
-                    {'model': model_0_path, 'layer_range': [int(current_pos), int(layer_idx)]},
-                    {'model': model_1_path, 'layer_range': [int(current_pos), int(layer_idx)]}
+                    {'model': model_0_path, 'layer_range': [int(layer_idx), int(layer_idx + 1)]},
+                    {'model': model_1_path, 'layer_range': [int(layer_idx), int(layer_idx + 1)]}
+                ],
+                'parameters': {'t': [{'value': 0.5}]}
+            })
+            current_pos = layer_idx + 1
+        if current_pos < total_layers:
+            slices.append({
+                'sources': [
+                    {'model': model_0_path, 'layer_range': [int(current_pos), int(total_layers)]},
+                    {'model': model_1_path, 'layer_range': [int(current_pos), int(total_layers)]}
                 ],
                 'parameters': {'t': [{'value': unmerged_t}]}
             })
-        # Add a slice for the layers to be merged.
-        slices.append({
-            'sources': [
-                {'model': model_0_path, 'layer_range': [int(layer_idx), int(layer_idx + 1)]},
-                {'model': model_1_path, 'layer_range': [int(layer_idx), int(layer_idx + 1)]}
-            ],
-            'parameters': {'t': [{'value': 0.5}]}
-        })
-        current_pos = layer_idx + 1
-    
-    # Add a final slice for any remaining unmerged layers.
-    if current_pos < total_layers:
-        slices.append({
-            'sources': [
-                {'model': model_0_path, 'layer_range': [int(current_pos), int(total_layers)]},
-                {'model': model_1_path, 'layer_range': [int(current_pos), int(total_layers)]}
-            ],
-            'parameters': {'t': [{'value': unmerged_t}]}
-        })
 
-    config_data = {
-        'merge_method': 'slerp',
-        'base_model': base_model_path,
-        'dtype': 'bfloat16',
-        'slices': slices
-    }
+        config_data = {
+            'merge_method': 'slerp',
+            'base_model': base_model_path,
+            'dtype': 'bfloat16',
+            'slices': slices
+        }
+    else:
+        # Selective component merge per chosen scheme
+        component_ids = SCHEME_TO_COMPONENT_IDS[scheme_key]
+        component_names = [COMPONENT_INDEX_TO_NAME[i] for i in component_ids if i in COMPONENT_INDEX_TO_NAME]
+
+        def comp_to_filter(name: str) -> str:
+            if name == 'embed_tokens':
+                return 'model.embed_tokens.weight'
+            if name == 'lm_head':
+                return 'lm_head.weight'
+            if name == 'final_norm':
+                return 'model.norm.weight'
+            return f"{name}.weight"
+
+        per_layer_components = [c for c in component_names if c not in NON_LAYER_COMPONENT_NAMES]
+        non_layer_components = [c for c in component_names if c in NON_LAYER_COMPONENT_NAMES]
+        per_layer_filters = [comp_to_filter(c) for c in per_layer_components]
+        non_layer_filters = [comp_to_filter(c) for c in non_layer_components]
+
+        # For components not explicitly listed, default to base model (unfiltered_source = 'base')
+        default_t = 0.0
+
+        slices = []
+        other_model_path = model_1_path if base_model_path == model_0_path else model_0_path
+        layers_to_merge_set = set(int(x) for x in layers_to_merge)
+        for layer_idx in range(int(total_layers)):
+            t_entries = []
+            if layer_idx in layers_to_merge_set and per_layer_filters:
+                for f in per_layer_filters:
+                    t_entries.append({"filter": f, "value": float(0.5)})
+            t_entries.append({"value": float(default_t)})
+            slices.append({
+                'sources': [
+                    {'model': base_model_path, 'layer_range': [int(layer_idx), int(layer_idx + 1)]},
+                    {'model': other_model_path, 'layer_range': [int(layer_idx), int(layer_idx + 1)]}
+                ],
+                'parameters': {'t': t_entries}
+            })
+
+        if non_layer_filters:
+            t_entries = [{"filter": f, "value": float(0.5)} for f in non_layer_filters]
+            t_entries.append({"value": float(default_t)})
+            slices.append({
+                'sources': [
+                    {'model': base_model_path, 'layer_range': [0, int(total_layers)]},
+                    {'model': other_model_path, 'layer_range': [0, int(total_layers)]}
+                ],
+                'parameters': {'t': t_entries}
+            })
+
+        config_data = {
+            'merge_method': 'slerp',
+            'base_model': base_model_path,
+            'dtype': 'bfloat16',
+            'slices': slices,
+            'parameters': {'normalize': True},
+        }
 
     layers_str = '_'.join(map(str, layers_to_merge))
-    filename = f"merge_layers_{layers_str}_base_{base_language}.yaml"
+    scheme_tag = _normalize_scheme_name(merge_scheme)
+    filename = f"merge_layers_{layers_str}_base_{base_language}_scheme_{scheme_tag}.yaml"
     filepath = os.path.join(output_dir, filename)
 
     with open(filepath, 'w') as f:
@@ -183,18 +281,26 @@ def create_yaml_for_merge(layers_to_merge: list, base_language: str, models_subs
     return filepath
 
 
-def run_merge_and_eval(layers_to_merge: List[int], models_subset: Dict[str, str], env_manager, env_config, eval_settings, total_layers, tmp_dir) -> Dict[str, float]:
+def run_merge_and_eval(layers_to_merge: List[int], models_subset: Dict[str, str], env_manager, env_config, eval_settings, total_layers, tmp_dir, merge_scheme: str, iter_output_dir: str) -> Dict[str, float]:
     """
     A helper function that performs a full merge-and-evaluate cycle for a
     given set of layers, once for each task base.
     """
     accuracies = {}
     for task in models_subset.keys():
-        config_path = create_yaml_for_merge(layers_to_merge, task, models_subset, "algorithms/outputs/tmp_iter_configs", total_layers)
+        config_path = create_yaml_for_merge(
+            layers_to_merge,
+            task,
+            models_subset,
+            iter_output_dir,
+            total_layers,
+            merge_scheme=merge_scheme,
+        )
         
         # Use a temporary directory to store the merged model, which is cleaned up automatically.
         with tempfile.TemporaryDirectory(dir=tmp_dir) as tmp_model_dir:
-            print(f"\n[Mergekit] Merging model (base: {task}) to temporary directory: {os.path.basename(tmp_model_dir)}")
+            print(f"\n[Mergekit] Merging model (base: {task}) with scheme='{merge_scheme}' to temporary directory: {os.path.basename(tmp_model_dir)}")
+            print(f"[Mergekit] Using config: {config_path}")
             with open(config_path, "r") as f:
                 merge_config = MergeConfiguration.model_validate(yaml.safe_load(f))
             
@@ -228,7 +334,9 @@ def heuristic_iterative_merge(
     env_config=None, 
     eval_settings=None, 
     total_layers=None,
-    tmp_dir=None
+    tmp_dir=None,
+    merge_scheme: str = "full",
+    iter_output_dir: str = "algorithms/outputs/tmp_iter_configs",
 ):
     """
     Performs the iterative heuristic search for the best layers to merge.
@@ -292,7 +400,7 @@ def heuristic_iterative_merge(
             layers = list(range(int(row["start_layer"]), int(row["start_layer"]) + int(row["window_size"])))
             print(f"-> Evaluating window: {layers} ({i + 1}/{k_candidates})")
             
-            current_accuracies = run_merge_and_eval(layers, models_subset, env_manager, env_config, eval_settings, total_layers, tmp_dir)
+            current_accuracies = run_merge_and_eval(layers, models_subset, env_manager, env_config, eval_settings, total_layers, tmp_dir, merge_scheme, iter_output_dir)
             cand_score = sum(importance_weights[task] * current_accuracies.get(task, 0.0) for task in tasks)
 
             if cand_score > best_of_top_k["score"]:
@@ -329,7 +437,7 @@ def heuristic_iterative_merge(
             random_layers = list(range(int(random_row["start_layer"]), int(random_row["start_layer"]) + int(random_row["window_size"])))
             print(f"-> Randomly selected window: {random_layers}")
             
-            random_accuracies = run_merge_and_eval(random_layers, models_subset, env_manager, env_config, eval_settings, total_layers, tmp_dir)
+            random_accuracies = run_merge_and_eval(random_layers, models_subset, env_manager, env_config, eval_settings, total_layers, tmp_dir, merge_scheme, iter_output_dir)
             print(f"Random solution accuracy: {random_accuracies}")
             
             chosen_layers = random_layers
@@ -381,6 +489,7 @@ def run_main() -> None:
     total_layers = algo_config['total_layers']
     layer_budget = heuristic_config['layer_budget']
     profiling_dir = heuristic_config['profiling_dir']
+    merge_scheme = heuristic_config.get('merge_scheme', 'full')
     run_prefix = algo_config['run_prefix']
 
     tmp_dir = algo_config['tmp_dir']
@@ -401,6 +510,14 @@ def run_main() -> None:
 
     print("--- Starting Heuristic Merge Process ---")
     print(f"Tasks to merge: {tasks}")
+    print(f"Selected merge scheme: '{merge_scheme}'")
+
+    # Create per-run tag and output directories to avoid conflicts across parallel runs
+    run_tag = f"{_normalize_scheme_name(merge_scheme)}_B{layer_budget}_{int(time.time())}"
+    iter_output_dir = os.path.join("algorithms/outputs/tmp_iter_configs", run_tag)
+    final_cfg_dir = os.path.join("algorithms/outputs/final_model_config", run_tag)
+    os.makedirs(iter_output_dir, exist_ok=True)
+    os.makedirs(final_cfg_dir, exist_ok=True)
 
     # Step 1: Perform cross-evaluation to establish dynamic baselines.
     print("\n--- Step 1: Performing cross-evaluation to determine baselines ---")
@@ -448,7 +565,9 @@ def run_main() -> None:
         env_config=env_config,
         eval_settings=eval_settings,
         total_layers=total_layers,
-        tmp_dir=tmp_dir
+        tmp_dir=tmp_dir,
+        merge_scheme=merge_scheme,
+        iter_output_dir=iter_output_dir,
     )
 
     print("\n--- Process Finished ---")
@@ -457,12 +576,12 @@ def run_main() -> None:
         
         # Step 5: Build and save the final model based on the search results.
         print("\nBuilding and saving the final model...")
-        final_model_dir = f"algorithms/outputs/heuristic_merged_model_final_{run_prefix}_{'_'.join(tasks)}"
+        final_model_dir = f"algorithms/outputs/heuristic_merged_model_final_{run_prefix}_{'_'.join(tasks)}_{run_tag}"
         if os.path.exists(final_model_dir):
             shutil.rmtree(final_model_dir)
 
         final_base_lang = tasks[0]
-        final_config_path = create_yaml_for_merge(final_layers, final_base_lang, models_subset, "algorithms/outputs/final_model_config", total_layers)
+        final_config_path = create_yaml_for_merge(final_layers, final_base_lang, models_subset, final_cfg_dir, total_layers, merge_scheme=merge_scheme)
         print(f"[Mergekit] Creating final model using config: {final_config_path}")
         
         with open(final_config_path, "r") as f:
@@ -489,10 +608,4 @@ def run_main() -> None:
 
 
 if __name__ == '__main__':
-    # Clean up temporary directories from previous runs.
-    if os.path.exists("algorithms/outputs/tmp_iter_configs"):
-        shutil.rmtree("algorithms/outputs/tmp_iter_configs")
-    if os.path.exists("algorithms/outputs/final_model_config"):
-        shutil.rmtree("algorithms/outputs/final_model_config")
-
     run_main()
