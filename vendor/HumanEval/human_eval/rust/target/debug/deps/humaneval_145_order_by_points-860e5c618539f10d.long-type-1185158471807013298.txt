@@ -1,0 +1,1 @@
+Map<Enumerate<std::slice::Iter<'_, isize>>, {closure@src/bin/humaneval_145_order_by_points.rs:14:14: 14:25}>
