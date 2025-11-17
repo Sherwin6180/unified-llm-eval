@@ -1,6 +1,7 @@
 # tasks/task_registry.py
 from evaluators.language_evaluator import LanguageEvaluator
 from evaluators.harness_evaluator import HarnessEvaluator
+from evaluators.simple_evaluator import SimpleEvaluator
 
 # This registry is the single source of truth for mapping tasks to their
 # respective evaluation logic and environment.
@@ -25,10 +26,10 @@ TASK_REGISTRY = {
     "julia":     {"evaluator": LanguageEvaluator, "env": "languages_env"},
     "rb":        {"evaluator": LanguageEvaluator, "env": "languages_env"},
     "ocaml":     {"evaluator": LanguageEvaluator, "env": "languages_env"},
-
-    # Other task domains
-    "medqa_4options": {"evaluator": HarnessEvaluator, "env": "ian6-venv"},
-    "international_law": {"evaluator": HarnessEvaluator, "env": "ian6-venv"},
+    
+    # Tasks for direct execution (no conda env)
+    "medqa_4options": {"evaluator": SimpleEvaluator, "env": None},
+    "international_law": {"evaluator": SimpleEvaluator, "env": None},
 }
 
 ALL_TASKS = list(TASK_REGISTRY.keys())
