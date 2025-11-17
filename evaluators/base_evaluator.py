@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 import time
+import subprocess
 from datetime import datetime
 from utils.result_parser import parse_score
 
@@ -30,6 +31,7 @@ class BaseEvaluator(ABC):
 
         Returns:
             tuple: A tuple containing (command_list, working_directory, environment_name).
+                   environment_name can be None for direct execution.
         """
         pass
 
@@ -51,12 +53,38 @@ class BaseEvaluator(ABC):
         model_path = model_config['path']
         
         # Delegate command construction to the specific subclass
-        # Note: This version does not pass task_options, as per your request.
         command, cwd, env_name = self._construct_command(model_path, task_name)
         
-        # Run the command in the appropriate environment via the EnvironmentManager
         timeout = self.eval_settings.get("timeout_minutes", 30) * 60
-        result = self.env_manager.run_in_env(env_name, command, cwd=cwd, timeout=timeout)
+        
+        # If env_name is None, run directly without conda
+        if env_name is None:
+            try:
+                result = subprocess.run(
+                    command,
+                    cwd=cwd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout
+                )
+            except subprocess.TimeoutExpired:
+                result = subprocess.CompletedProcess(
+                    args=command,
+                    returncode=-1,
+                    stdout="",
+                    stderr=f"Command timed out after {timeout} seconds"
+                )
+                result.timeout = True
+            except Exception as e:
+                result = subprocess.CompletedProcess(
+                    args=command,
+                    returncode=-1,
+                    stdout="",
+                    stderr=f"Error running command: {e}"
+                )
+        else:
+            # Run the command in the appropriate environment via the EnvironmentManager
+            result = self.env_manager.run_in_env(env_name, command, cwd=cwd, timeout=timeout)
         
         duration = time.time() - start_time
         
@@ -87,8 +115,8 @@ class BaseEvaluator(ABC):
             "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "model_name": model_name,
             "task": task_name,
-            "run_id": run_id,  # Add run_id to the final results
-            "environment": env_name,
+            "run_id": run_id,
+            "environment": env_name or "direct",
             "score": score,
             "status": status,
             "duration": f"{duration/60:.2f}min",
