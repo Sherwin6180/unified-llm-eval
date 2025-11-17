@@ -25,6 +25,10 @@ TASK_REGISTRY = {
     "julia":     {"evaluator": LanguageEvaluator, "env": "languages_env"},
     "rb":        {"evaluator": LanguageEvaluator, "env": "languages_env"},
     "ocaml":     {"evaluator": LanguageEvaluator, "env": "languages_env"},
+
+    # Other task domains
+    "medqa_4options": {"evaluator": HarnessEvaluator, "env": "ian6-venv"},
+    "international_law": {"evaluator": HarnessEvaluator, "env": "ian6-venv"},
 }
 
 ALL_TASKS = list(TASK_REGISTRY.keys())
