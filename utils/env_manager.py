@@ -80,6 +80,27 @@ class EnvironmentManager:
 
     def run_in_env(self, env_name, command_args, cwd=None, timeout=None):
         """
+        if the user chooses not to use the conda env, then
+        let the user to use virtualenv (venv)
+
+        """
+        # If env_name is "virtualenv", use the user's virtualenv
+        if env_name == "ian6-venv":
+            # TODO: change this command accordingly.
+            venv_activate = "/nethome/ian6/ian6-myenv/bin/activate"
+            # Run command with virtualenv activated
+            full_command = f"source {venv_activate} && " + " ".join(command_args)
+            result = subprocess.run(
+                full_command,
+                shell=True,
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            return result
+
+        """
         Runs a command within the specified Conda environment.
         """
         conda_command = [
