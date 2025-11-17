@@ -29,7 +29,7 @@ TASK_REGISTRY = {
     
     # Tasks for direct execution (no conda env)
     "medqa_4options": {"evaluator": SimpleEvaluator, "env": None},
-    "international_law": {"evaluator": SimpleEvaluator, "env": None},
+    "mmlu_international_law": {"evaluator": SimpleEvaluator, "env": None},
 }
 
 ALL_TASKS = list(TASK_REGISTRY.keys())
