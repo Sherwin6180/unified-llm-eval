@@ -31,9 +31,36 @@ def parse_score(stdout, task_name):
                 score = float(line.strip().split()[0])
                 return score
 
-    else: # Default for language tasks using eval_pal.py
-        match = re.search(r"Score is\s*(\d+\.?\d+)", stdout)
-        if match:
-            return float(match.group(1)) * 100
+    # For lm-eval-harness tasks (medqa, mmlu, etc.)
+    # These tasks use lm-eval and output results in various formats
+    
+    # Pattern 1: lm-eval table format
+    # |task_name|...|acc|...|0.2742|±|0.0125|
+    match = re.search(r'\|\s*[\w_]+\s*\|.*?\|\s*acc\s*\|.*?\|([0-9.]+)\|', stdout)
+    if match:
+        return float(match.group(1)) * 100
+    
+    # Pattern 2: Dictionary-like format from lm-eval
+    # 'task_name': {'acc': 0.2742, ...}
+    match = re.search(r"'acc':\s*([0-9.]+)", stdout)
+    if match:
+        return float(match.group(1)) * 100
+    
+    # Pattern 3: JSON format from lm-eval
+    # {"task_name": {"acc,none": 0.2742}}
+    match = re.search(r'"acc[^"]*":\s*([0-9.]+)', stdout)
+    if match:
+        return float(match.group(1)) * 100
+    
+    # Pattern 4: lm-eval final results line
+    # |task_name|1|none|0|acc|↑|0.2742|±|0.0125|
+    match = re.search(r'\|\s*acc\s*\|[^|]*\|([0-9.]+)\s*\|', stdout)
+    if match:
+        return float(match.group(1)) * 100
+
+    # Default for language tasks using eval_pal.py
+    match = re.search(r"Score is\s*(\d+\.?\d+)", stdout)
+    if match:
+        return float(match.group(1)) * 100
 
     return None
