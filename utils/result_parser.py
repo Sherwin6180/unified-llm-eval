@@ -31,6 +31,25 @@ def parse_score(stdout, task_name):
                 score = float(line.strip().split()[0])
                 return score
 
+    # For tinyBenchmarks tasks (tinyMMLU, tinyArc, tinyHellaswag, etc.)
+    # These use acc_norm with custom aggregation functions
+    if task_name.startswith("tiny"):
+        # Pattern 1: acc_norm in table format
+        # |tinyMMLU|...|acc_norm|...|0.5234|±|0.0125|
+        match = re.search(r'\|\s*' + re.escape(task_name) + r'\s*\|.*?\|\s*acc_norm\s*\|.*?\|([0-9.]+)\|', stdout)
+        if match:
+            return float(match.group(1)) * 100
+        
+        # Pattern 2: acc_norm in dictionary format
+        match = re.search(r"'acc_norm':\s*([0-9.]+)", stdout)
+        if match:
+            return float(match.group(1)) * 100
+        
+        # Pattern 3: JSON format with acc_norm
+        match = re.search(r'"acc_norm[^"]*":\s*([0-9.]+)', stdout)
+        if match:
+            return float(match.group(1)) * 100
+
     # For lm-eval-harness tasks (medqa, mmlu, etc.)
     # These tasks use lm-eval and output results in various formats
     
