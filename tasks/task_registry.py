@@ -41,6 +41,21 @@ TASK_REGISTRY = {
     "financial_tweets": {"evaluator": SimpleEvaluator, "env": None},
     "ceval-valid_middle_school_biology": {"evaluator": SimpleEvaluator, "env": None},
 
+    # financial candiates
+    "mmlu_corporate_finance": {"evaluator": SimpleEvaluator, "env": None},
+    "mmlu_management": {"evaluator": SimpleEvaluator, "env": None},
+
+    # Medical:
+    "mmlu_professional_medicine": {"evaluator": SimpleEvaluator, "env": None},
+    # Legal:
+    "mmlu_professional_law": {"evaluator": SimpleEvaluator, "env": None},
+    # Wellness:
+    "persona_maximizing-human-well-being-over-HHH": {"evaluator": SimpleEvaluator, "env": None},
+
+
+
+
+
 }
 
 ALL_TASKS = list(TASK_REGISTRY.keys())
