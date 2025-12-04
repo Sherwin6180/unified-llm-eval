@@ -140,35 +140,54 @@ fi
 echo "  ✓ Mathlib4 submodule found"
 
 # =============================================================================
-# Step 4: Build Mathlib4
+# Step 4: Build Mathlib4 and REPL
 # =============================================================================
 echo ""
-echo "[Step 4/5] Building Mathlib4..."
+echo "[Step 4/6] Building Mathlib4 and REPL..."
 echo "  This may take 30-60 minutes on first build..."
 
 cd "$MATHLIB4_DIR"
 
-# Check if already built
+# Make sure lake is in PATH
+export PATH="$ELAN_HOME/bin:$PATH"
+
+# Check if Mathlib4 is already built
 if [ -d ".lake/build/lib" ] && [ "$(find .lake/build/lib -name '*.olean' 2>/dev/null | wc -l)" -gt 1000 ]; then
     echo "  ✓ Mathlib4 appears to be already built (found .olean files)"
-    echo "  To rebuild, run: cd $MATHLIB4_DIR && lake build"
 else
-    echo "  Running 'lake build'..."
-    
-    # Make sure lake is in PATH
-    export PATH="$ELAN_HOME/bin:$PATH"
-    
-    # Build mathlib4
+    echo "  Running 'lake build' for Mathlib4..."
     lake build
-    
     echo "  ✓ Mathlib4 built successfully"
 fi
 
+# Build REPL package (required for proof compilation)
+echo ""
+echo "[Step 5/6] Building REPL package..."
+REPL_BIN="$MATHLIB4_DIR/.lake/packages/REPL/.lake/build/bin/repl"
+REPL_OLEAN="$MATHLIB4_DIR/.lake/packages/REPL/.lake/build/lib/REPL.olean"
+
+if [ -f "$REPL_BIN" ] && [ -f "$REPL_OLEAN" ]; then
+    echo "  ✓ REPL package appears to be already built"
+else
+    echo "  Running 'lake build REPL' to build the REPL package..."
+    lake build REPL
+    echo "  ✓ REPL package built successfully"
+fi
+
+# Verify REPL works
+echo "  Testing REPL..."
+if echo '{"cmd": "print \"hello\"", "env": 0}' | timeout 10 lake exe repl 2>/dev/null | grep -q "Unknown environment"; then
+    echo "  ✓ REPL is working correctly"
+else
+    echo "  ⚠ REPL test failed. You may need to rebuild:"
+    echo "    cd $MATHLIB4_DIR && lake build REPL"
+fi
+
 # =============================================================================
-# Step 5: Test the installation
+# Step 6: Test the installation
 # =============================================================================
 echo ""
-echo "[Step 5/5] Testing Lean 4 REPL..."
+echo "[Step 6/6] Final verification..."
 
 cd "$GOEDEL_DIR"
 

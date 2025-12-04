@@ -51,6 +51,58 @@ class MinIF2FEvaluator(BaseEvaluator):
         # Get minif2f-specific settings
         self.minif2f_settings = eval_settings.get("minif2f_settings", {})
         
+        # Validate Lean environment on initialization
+        self._validate_lean_environment()
+    
+    def _validate_lean_environment(self):
+        """
+        Validate that the Lean 4 environment is properly set up.
+        
+        Checks:
+        1. goedel-prover directory exists
+        2. mathlib4 directory exists
+        3. mathlib4 is built (.lake/build exists)
+        
+        Raises:
+            RuntimeError: If environment is not properly configured
+        """
+        # Check goedel-prover directory
+        if not self.goedel_dir.exists():
+            raise RuntimeError(
+                f"\n{'='*60}\n"
+                f"ERROR: Goedel-Prover directory not found!\n"
+                f"Expected path: {self.goedel_dir}\n\n"
+                f"Please run the setup script to install Lean 4 and Goedel-Prover:\n"
+                f"    bash scripts/setup_lean4.sh\n"
+                f"{'='*60}\n"
+            )
+        
+        # Check mathlib4 directory
+        mathlib_dir = self.goedel_dir / "mathlib4"
+        if not mathlib_dir.exists():
+            raise RuntimeError(
+                f"\n{'='*60}\n"
+                f"ERROR: mathlib4 directory not found!\n"
+                f"Expected path: {mathlib_dir}\n\n"
+                f"Please run the setup script:\n"
+                f"    bash scripts/setup_lean4.sh\n"
+                f"{'='*60}\n"
+            )
+        
+        # Check if mathlib4 is built
+        lake_build_dir = mathlib_dir / ".lake" / "build"
+        if not lake_build_dir.exists():
+            raise RuntimeError(
+                f"\n{'='*60}\n"
+                f"ERROR: mathlib4 is not built!\n"
+                f"The .lake/build directory is missing at: {lake_build_dir}\n\n"
+                f"This is required for Lean 4 proof compilation.\n"
+                f"Please run the setup script to build mathlib4:\n"
+                f"    bash scripts/setup_lean4.sh\n\n"
+                f"Note: Building mathlib4 takes 30-60 minutes.\n"
+                f"{'='*60}\n"
+            )
+        
     def _get_gpu_env(self):
         """
         Configure environment variables for GPU usage.
