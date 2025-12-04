@@ -305,10 +305,11 @@ def main():
     # Create output directory
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     
-    # Save configuration
+    # Save configuration (convert Path objects to strings for JSON serialization)
     config_file = Path(args.output_dir) / "run_config.json"
+    config_data = {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()}
     with open(config_file, 'w') as f:
-        json.dump(vars(args), f, indent=2)
+        json.dump(config_data, f, indent=2)
     
     print(f"\n{'='*60}")
     print("MiniF2F Evaluation Pipeline")
