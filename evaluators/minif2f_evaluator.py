@@ -33,9 +33,12 @@ class MinIF2FEvaluator(BaseEvaluator):
     3. Summarize results
     """
     
-    # Default paths relative to vendor/goedel-prover/
+    # Default paths relative to project root
     DEFAULT_GOEDEL_DIR = "vendor/goedel-prover"
     DEFAULT_DATASET_PATH = "dataset/minif2f.jsonl"
+    
+    # Get project root directory (parent of evaluators/)
+    PROJECT_ROOT = Path(__file__).parent.parent.resolve()
     
     def __init__(self, env_manager, env_config, eval_settings):
         super().__init__(env_manager, env_config, eval_settings)
@@ -117,14 +120,15 @@ class MinIF2FEvaluator(BaseEvaluator):
         temperature = self.minif2f_settings.get("temperature", 1.0)
         max_model_len = self.minif2f_settings.get("max_model_len", 40960)
         
-        # Build the wrapper script command
-        wrapper_script = str(self.goedel_dir / "scripts" / "run_minif2f.py")
+        # Build the wrapper script command (located in project scripts/ directory)
+        wrapper_script = str(self.PROJECT_ROOT / "scripts" / "run_minif2f.py")
         
         command = [
             "python", wrapper_script,
             "--model_path", model_path,
             "--dataset_path", dataset_path,
             "--output_dir", str(output_dir),
+            "--goedel_prover_dir", str(self.goedel_dir),  # Path to Goedel-Prover-V2
             "--split", split,
             "--num_samples", str(num_samples),
             "--num_gpus", str(num_gpus),
