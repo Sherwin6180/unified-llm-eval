@@ -7,9 +7,15 @@ def log(message):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[{timestamp}] {message}")
 
-def display_scoreboard(scoreboard_data):
-    """Clears the console and displays the live scoreboard."""
-    os.system('cls' if os.name == 'nt' else 'clear')
+def display_scoreboard(scoreboard_data, clear_screen=False):
+    """Displays the live scoreboard.
+    
+    Args:
+        scoreboard_data: Dict of model results
+        clear_screen: If True, clears the console before displaying
+    """
+    if clear_screen:
+        os.system('cls' if os.name == 'nt' else 'clear')
     log("Refreshing live scoreboard...")
     
     header = "🏆 LIVE SCOREBOARD"

@@ -6,23 +6,26 @@ run_settings:
   tasks_to_run:
     # - "all" 
     # - "rust"
-    - "go"
+    # - "go"
     # - "humaneval"
     # - "gsm8k-cot"
     # - "gsm8k-pal"
+    - "minif2f-test"        # Lean 4 theorem proving (MiniF2F test split)
+    # - "minif2f-valid"  # MiniF2F validation split
+    # - "matholympiadbench"  # IMO-level math problems
 
 # List of models to be evaluated in this run.
 models:
-  - model_name: "deepseek-llm-7b-base-online"
-    path: "deepseek-ai/deepseek-llm-7b-base"
+  - model_name: "Gazal-R1-32B-sft-merged-preview"
+    path: "/scratch/shared_dir/xinyu/test_models/Gazal-R1-32B-sft-merged-preview"
     type: "base"
     description: "Base instructed model"
-    location: "hf"
-  - model_name: "deepseek-coder-6.7b-instruct-local"
-    path: "/scratch/shared_dir/xinyu/deepseek-coder-6.7b-instruct"
-    type: "instruct"
-    description: "Base instructed model"
     location: "local"
+  # - model_name: "deepseek-coder-6.7b-instruct-local"
+  #   path: "/scratch/shared_dir/xinyu/deepseek-coder-6.7b-instruct"
+  #   type: "instruct"
+  #   description: "Base instructed model"
+  #   location: "local"
 
 # General settings applicable to all evaluations.
 evaluation_settings:
@@ -32,10 +35,33 @@ evaluation_settings:
   temperature: 0.0
   runs_per_eval: 1
   output_dir: "./evaluation_results"
+  verbose: true  # Set to false to suppress detailed console logs
+  clear_screen: false  # Set to true to clear screen when refreshing live scoreboard
+  
+  # MiniF2F-specific settings (for theorem proving tasks)
+  minif2f_settings:
+    # Number of proof samples per problem (Pass@N)
+    num_samples: 32
+    # Number of samples in correction rounds
+    num_samples_correction: 2
+    # Number of CPU cores for Lean compilation
+    num_cpus: 64
+    # Maximum self-correction rounds (0 = no correction)
+    max_correction_rounds: 0
+    # Inference handler: "dpskcot" (CoT), "dpsknoncot" (no CoT), "kiminacot"
+    inference_handler: "dpskcot"
+    # Sampling temperature for proof generation
+    temperature: 1.0
+    # Maximum model sequence length
+    max_model_len: 40960
+    # Path to dataset (relative to goedel_prover_dir or absolute)
+    dataset_path: "dataset/test.jsonl" # dataset/minif2f.jsonl
 
 # Configuration for environments and paths to evaluation scripts.
 environment_config:
   harness_env: "harness_env" # DON'T CHANGE
   languages_env: "languages_env" # DON'T CHANGE
+  goedelv2_env: "goedelv2" # Conda env for theorem proving
   math_harness_dir: "./vendor/math-evaluation-harness" # DON'T CHANGE
   language_eval_dir: "./vendor/HumanEval" # DON'T CHANGE
+  goedel_prover_dir: "./vendor/goedel-prover" # DON'T CHANGE
