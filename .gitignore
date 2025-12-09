@@ -25,3 +25,17 @@ algorithms/outputs/
 .idea/
 .vscode/
 .DS_Store
+
+# Goedel-Prover-V2 (cloned by setup script)
+# The goedel-prover directory is large (~10GB with built mathlib4)
+# and should be cloned/built locally using scripts/setup_lean4.sh
+vendor/goedel-prover/
+
+# Lean build artifacts (if building locally)
+.lake/
+*.olean
+*.ilean
+
+# Large generated files
+unified_llm_eval.txt
+*.txt.bak

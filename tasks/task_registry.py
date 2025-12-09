@@ -2,6 +2,7 @@
 from evaluators.language_evaluator import LanguageEvaluator
 from evaluators.harness_evaluator import HarnessEvaluator
 from evaluators.simple_evaluator import SimpleEvaluator
+from evaluators.minif2f_evaluator import MinIF2FEvaluator
 
 # This registry is the single source of truth for mapping tasks to their
 # respective evaluation logic and environment.
@@ -57,6 +58,13 @@ TASK_REGISTRY = {
 
 
 
+    # Theorem proving tasks (goedelv2_env)
+    # MiniF2F benchmark for Lean 4 theorem proving
+    "minif2f": {"evaluator": MinIF2FEvaluator, "env": "goedelv2"},
+    "minif2f-test": {"evaluator": MinIF2FEvaluator, "env": "goedelv2"},
+    "minif2f-valid": {"evaluator": MinIF2FEvaluator, "env": "goedelv2"},
+    # MathOlympiadBench for IMO-level problems
+    "matholympiadbench": {"evaluator": MinIF2FEvaluator, "env": "goedelv2"},
 }
 
 ALL_TASKS = list(TASK_REGISTRY.keys())

@@ -124,7 +124,8 @@ class UnifiedEvaluator:
                         # Create a display name that includes the run ID if there are multiple runs
                         display_name_run = f"{task_name}-R{run_id}" if runs_per_eval > 1 else task_name
                         self.live_scoreboard[model_name][f"{display_name_run} ({result['environment']})"] = score_display
-                        display_scoreboard(self.live_scoreboard)
+                        clear_screen = self.eval_settings.get('clear_screen', False)
+                        display_scoreboard(self.live_scoreboard, clear_screen=clear_screen)
                         
                         pbar.update(1)
         

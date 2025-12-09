@@ -7,6 +7,35 @@ def parse_score(stdout, task_name):
     Returns:
         float: The parsed score (as a percentage), or None if parsing fails.
     """
+    # MiniF2F theorem proving tasks
+    if task_name in ["minif2f", "minif2f-test", "minif2f-valid", "matholympiadbench"]:
+        # Pattern 1: solved_ratio from summary JSON
+        # "solved_ratio": "84.60" or "solved_ratio": " 84.60"
+        match = re.search(r'"solved_ratio":\s*"?\s*([\d.]+)', stdout)
+        if match:
+            return float(match.group(1))
+        
+        # Pattern 2: MiniF2F Score output from run_minif2f.py
+        match = re.search(r'MiniF2F Score:\s*([\d.]+)%?', stdout)
+        if match:
+            return float(match.group(1))
+        
+        # Pattern 3: Solved ratio in different format
+        # "solved_num": 169, "problem_num": 244
+        match = re.search(r'"solved_num":\s*(\d+).*?"problem_num":\s*(\d+)', stdout, re.DOTALL)
+        if match:
+            solved = int(match.group(1))
+            total = int(match.group(2))
+            if total > 0:
+                return (solved / total) * 100
+        
+        # Pattern 4: Simple percentage output
+        match = re.search(r'Accuracy:\s*([\d.]+)%', stdout)
+        if match:
+            return float(match.group(1))
+            
+        return None
+    
     if task_name == "humaneval":
         match = re.search(r"\|\s*humaneval\s*\|.*?\|\s*pass@1\s*\|.*?(\d+\.?\d*)", stdout)
         if match:

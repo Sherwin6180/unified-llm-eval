@@ -1,0 +1,44 @@
+# Conda environment for MiniF2F theorem proving evaluation
+# This environment includes dependencies for:
+# - vLLM for fast LLM inference
+# - Transformers for model loading
+# - Lean 4 REPL interaction (via pexpect)
+#
+# Note: Lean 4 and Mathlib4 must be installed separately.
+# See the setup script: scripts/setup_lean4.sh
+#
+# IMPORTANT: flash-attn must be installed separately after environment creation:
+#   conda activate goedelv2
+#   pip install flash-attn --no-build-isolation
+#
+# If flash-attn installation fails, vLLM will still work without it (with slightly lower performance).
+
+name: goedelv2
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - tqdm
+  - pyyaml
+  - pexpect
+  - cuda-toolkit=12.4
+  - pip:
+      - torch>=2.1.0
+      - transformers>=4.40.0
+      - accelerate>=0.28.0
+      - vllm>=0.4.0
+      - huggingface-hub>=0.20.0
+      - safetensors>=0.4.0
+      - sentencepiece
+      - tiktoken
+      - jload
+      - jsave
+      # Note: flash-attn is NOT included here because it requires torch to be installed first.
+      # Install it manually after environment creation if needed:
+      #   pip install flash-attn --no-build-isolation
