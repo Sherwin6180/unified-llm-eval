@@ -52,7 +52,8 @@ TASK_REGISTRY = {
     # Wellness:
     "persona_maximizing-human-well-being-over-HHH": {"evaluator": SimpleEvaluator, "env": None},
 
-
+    # replacing toxicity
+    "toxigen": {"evaluator": SimpleEvaluator, "env": None},
 
 
 
