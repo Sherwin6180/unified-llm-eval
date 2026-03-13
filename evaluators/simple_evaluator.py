@@ -45,6 +45,14 @@ class SimpleEvaluator(BaseEvaluator):
             "--batch_size", str(batch_size),
             "--output_path", f"./evaluation_results/{task_name}_output.json"
         ]
+
+        # support `samples` command for random sampling eval
+        samples_file = self.eval_settings.get("indices_file")
+        if samples_file:
+            # Read the file contents as a string since lm_eval expects a JSON string or file path parsing
+            with open(samples_file, 'r') as f:
+                samples_json = f.read()
+            command.extend(["--samples", samples_json])
         
         # Return None for env_name to indicate direct execution
         return command, None, None

@@ -39,6 +39,14 @@ class HarnessEvaluator(BaseEvaluator):
                 "--output_path", "./evaluation_results/humaneval_output.json",
                 "--confirm_run_unsafe_code"
             ]
+            
+            # support `samples` command for random sampling eval
+            samples_file = self.eval_settings.get("indices_file")
+            if samples_file:
+                with open(samples_file, 'r') as f:
+                    samples_json = f.read()
+                command.extend(["--samples", samples_json])
+
             return command, None, env_name
             
         elif task_name in ["gsm8k-cot", "gsm8k-pal"]:
