@@ -46,6 +46,13 @@ def load_yaml_config(config_path):
         elif location_type == 'hf':
             print(f"[Config] Detected Hugging Face model ID (location='hf'): {original_path}")
         
+        elif location_type == 'api':
+            # API-based models - path can be a model name or kept as-is
+            print(f"[Config] Detected API-based model (location='api'): {original_path}")
+            # Validate that api_base is provided
+            if 'api_base' not in model:
+                raise ValueError(f"Model '{model.get('model_name')}' has location='api' but missing 'api_base' field")
+        
         else:
             raise ValueError(f"Unknown location type '{model.get('location')}' for model '{model.get('model_name')}' in {config_path}")
 

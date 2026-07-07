@@ -120,7 +120,7 @@ class MinIF2FEvaluator(BaseEvaluator):
         gpu_ids = self.eval_settings.get("gpu_ids", "0")
         return len(gpu_ids.split(','))
     
-    def _construct_command(self, model_path, task_name):
+    def _construct_command(self, model_config, task_name):
         """
         Constructs the command to run the MiniF2F evaluation pipeline.
         
@@ -132,12 +132,18 @@ class MinIF2FEvaluator(BaseEvaluator):
         Since this is complex, we use a wrapper script that runs all steps.
         
         Args:
-            model_path (str): Path to the model
+            model_config (dict): Model configuration dictionary
             task_name (str): Task name (minif2f or minif2f-test)
             
         Returns:
             tuple: (command_list, working_directory, environment_name)
         """
+        # Extract model path and API settings from config
+        model_path = model_config['path']
+        api_base = model_config.get('api_base')
+        api_model_name = model_config.get('api_model_name')
+        tokenizer_path = model_config.get('tokenizer_path')
+        
         env_name = self.env_config.get("goedelv2_env", "goedelv2")
         
         # Determine the split (valid or test)
@@ -192,6 +198,14 @@ class MinIF2FEvaluator(BaseEvaluator):
             "--max_model_len", str(max_model_len),
         ]
         
+        # Add API parameters if specified in model config
+        if api_base:
+            command.extend(["--api_base", api_base])
+        if api_model_name:
+            command.extend(["--api_model_name", api_model_name])
+        if tokenizer_path:
+            command.extend(["--tokenizer_path", tokenizer_path])
+        
         return command, str(self.goedel_dir), env_name
     
     def evaluate(self, model_config, task_name, run_id=1):
@@ -218,7 +232,7 @@ class MinIF2FEvaluator(BaseEvaluator):
         model_path = model_config['path']
         
         # Construct command
-        command, cwd, env_name = self._construct_command(model_path, task_name)
+        command, cwd, env_name = self._construct_command(model_config, task_name)
         
         # Longer timeout for minif2f (theorem proving takes time)
         timeout = self.eval_settings.get("timeout_minutes", 120) * 60

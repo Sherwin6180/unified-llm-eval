@@ -59,6 +59,8 @@ class BaseEvaluator(ABC):
         
         # If env_name is None, run directly without conda
         if env_name is None:
+            # DEBUG print
+            print(f"\n[DEBUG] EXECUTING COMMAND:\n{' '.join(command)}\n")
             try:
                 result = subprocess.run(
                     command,
@@ -99,6 +101,7 @@ class BaseEvaluator(ABC):
             error_log = f"Task timed out after {timeout/60} minutes."
         elif result.returncode == 0:
             full_output = result.stdout + "\n" + result.stderr
+            print("\n[DEBUG] LM_EVAL OUTPUT:\n", full_output)
             parsed_score = parse_score(full_output, task_name)
             if parsed_score is not None:
                 status = "SUCCESS"

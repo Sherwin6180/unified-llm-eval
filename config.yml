@@ -10,17 +10,21 @@ run_settings:
     # - "humaneval"
     # - "gsm8k-cot"
     # - "gsm8k-pal"
-    - "minif2f-test"        # Lean 4 theorem proving (MiniF2F test split)
+    - "minif2f"        # Lean 4 theorem proving (MiniF2F test split)
     # - "minif2f-valid"  # MiniF2F validation split
     # - "matholympiadbench"  # IMO-level math problems
 
 # List of models to be evaluated in this run.
 models:
-  - model_name: "Gazal-R1-32B-sft-merged-preview"
-    path: "/scratch/shared_dir/xinyu/test_models/Gazal-R1-32B-sft-merged-preview"
+  - model_name: "prover"
+    path: "Qwen/Qwen3-32B"
     type: "base"
-    description: "Base instructed model"
-    location: "local"
+    description: "Prover model with LoRA via vLLM server"
+    location: "api"
+    # API-specific settings
+    api_base: "http://localhost:8000/v1"
+    api_model_name: "prover"  # Must match your --lora-modules name
+    tokenizer_path: "Qwen/Qwen3-32B"
   # - model_name: "deepseek-coder-6.7b-instruct-local"
   #   path: "/scratch/shared_dir/xinyu/deepseek-coder-6.7b-instruct"
   #   type: "instruct"
@@ -29,8 +33,8 @@ models:
 
 # General settings applicable to all evaluations.
 evaluation_settings:
-  gpu_ids: "2,3,5,6"
-  timeout_minutes: 30
+  gpu_ids: "0"
+  timeout_minutes: 120  # Increased for theorem proving
   batch_size: 1
   temperature: 0.0
   runs_per_eval: 1

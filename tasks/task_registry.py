@@ -65,6 +65,11 @@ TASK_REGISTRY = {
     "minif2f-valid": {"evaluator": MinIF2FEvaluator, "env": "goedelv2"},
     # MathOlympiadBench for IMO-level problems
     "matholympiadbench": {"evaluator": MinIF2FEvaluator, "env": "goedelv2"},
+
+    # Science:
+    "sciq": {"evaluator": SimpleEvaluator, "env": None},
+    # japanese:
+    "xwinograd_jp": {"evaluator": SimpleEvaluator, "env": None},
 }
 
 ALL_TASKS = list(TASK_REGISTRY.keys())

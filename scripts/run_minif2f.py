@@ -91,6 +91,14 @@ def run_inference(args, round_num, prev_output_dir=None):
         "--temp", str(args.temperature),
     ]
     
+    # Add API-related arguments if specified
+    if args.api_base:
+        cmd.extend(["--api_base", args.api_base])
+    if args.api_model_name:
+        cmd.extend(["--api_model_name", args.api_model_name])
+    if args.tokenizer_path:
+        cmd.extend(["--tokenizer_path", args.tokenizer_path])
+    
     if round_num == 0:
         # Initial inference needs input dataset
         cmd.extend(["--input_path", args.dataset_path])
@@ -288,6 +296,14 @@ def main():
                         help="Maximum model sequence length")
     parser.add_argument("--goedel_prover_dir", default=None, type=str,
                         help="Path to Goedel-Prover-V2 directory (default: vendor/goedel-prover)")
+    
+    # API-based inference arguments
+    parser.add_argument("--api_base", default=None, type=str,
+                        help="OpenAI-compatible API base URL (e.g., http://localhost:8000/v1). If specified, use API instead of local vLLM.")
+    parser.add_argument("--api_model_name", default=None, type=str,
+                        help="Model name to use with API (e.g., 'prover' for LoRA adapter).")
+    parser.add_argument("--tokenizer_path", default=None, type=str,
+                        help="Path to tokenizer (required when using --api_base).")
     
     args = parser.parse_args()
     
